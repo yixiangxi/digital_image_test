@@ -1,0 +1,102 @@
+import cv2
+import numpy as np
+
+def gaussian_kernel(size, sigma=1.5):
+    """生成高斯卷积核"""
+    kernel = np.zeros((size, size))
+    center = size // 2
+    s = 2 * (sigma ** 2)
+    for x in range(-center, center+1):
+        for y in range(-center, center+1):
+            r = np.sqrt(x**2 + y**2)
+            kernel[x+center, y+center] = (np.exp(-(r**2)/s)) / (np.pi * s)
+    return kernel / np.sum(kernel)
+
+def my_filter2D(src, kernel):
+    """二维卷积函数"""
+    if len(src.shape) == 2:
+        rows, cols = src.shape
+        dst = np.zeros_like(src)
+        k_rows, k_cols = kernel.shape
+        center_x, center_y = k_rows//2, k_cols//2
+        for i in range(center_x, rows-center_x):
+            for j in range(center_y, cols-center_y):
+                dst[i,j] = np.sum(src[i-center_x:i+center_x+1, j-center_y:j+center_y+1]*kernel)
+        return dst
+    else:
+        b, g, r = cv2.split(src)
+        b_dst = my_filter2D(b, kernel)
+        g_dst = my_filter2D(g, kernel)
+        r_dst = my_filter2D(r, kernel)
+        return cv2.merge((b_dst, g_dst, r_dst))
+#
+def fft2(img):
+    """二维快速傅里叶变换"""
+    rows, cols = img.shape
+    f = np.zeros((rows, cols), dtype=np.complex64)
+    for u in range(rows):
+        for v in range(cols):
+            sum = 0
+            for x in range(rows):
+                for y in range(cols):
+                    sum += img[x, y] * np.exp(-2j * np.pi * ((u * x) / rows + (v * y) / cols))
+            f[u, v] = sum
+    return f
+
+def ifft2(f):
+    """二维快速傅里叶逆变换"""
+    rows, cols = f.shape
+    img = np.zeros((rows, cols), dtype=np.float32)
+    for x in range(rows):
+        for y in range(cols):
+            sum = 0
+            for u in range(rows):
+                for v in range(cols):
+                    sum += f[u, v] * np.exp(2j * np.pi * ((u * x) / rows + (v * y) / cols))
+            img[x, y] = sum.real / (rows * cols)
+    return img
+
+# 读取图像并转换成灰度图像
+img = cv2.imread('image.jpg')
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+# 高斯滤波
+kernel_size = 9
+sigma = 1.0
+gaussian_kernel = gaussian_kernel(kernel_size, sigma)
+blurred_img = my_filter2D(gray, gaussian_kernel)
+
+# 傅里叶变换
+f = fft2(blurred_img)
+
+# 频率过滤
+rows, cols = gray.shape
+crow, ccol = rows // 2, cols // 2
+f[crow - 10:crow + 10, ccol - 10:ccol + 10] = 0
+
+# 反傅里叶变换
+img_back = ifft2(f)
+
+# 二值化处理
+threshold = 82
+ret, binary_img = cv2.threshold(img_back.astype(np.uint8), threshold, 255, cv2.THRESH_BINARY)
+
+# 形态学操作
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+morphed_img = cv2.morphologyEx(binary_img, cv2.MORPH_OPEN, kernel)
+
+# 计算连通区域
+count, labels = cv2.connectedComponents(morphed_img.astype(np.uint8))
+
+# 为每个连通区域标记颜色及数量
+output = img.copy()
+for i in range(1, count):
+    mask = labels == i
+    output[mask] = (0, 0, 255)
+    pos = np.round(cv2.mean(np.stack([np.where(mask, gray, 0)]*3, axis=-1))).astype(int)
+    cv2.putText(output, str(i), tuple((pos[1], pos[0])), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+# 显示并保存结果
+cv2.imshow('Result', output)
+cv2.imwrite('result.jpg', output)
+print("菌落数量： %d" % (count - 1))

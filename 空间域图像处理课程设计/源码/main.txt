@@ -1,0 +1,34 @@
+import cv2
+import resize
+import resize_2
+import rotation
+import rotation_2
+import rotation_3
+import move
+import move_2
+def main():
+    path1 = "image.jpg"
+    a = 6
+    #对图像进行旋转6度 并截取图像，rotation不使用近似的方法，rotation2使用近似方法
+    cv2.imwrite('out_rot_1.jpg', rotation.f_rotation_1(a, path1))
+    cv2.imwrite('out_rot_2.jpg', rotation_2.f_rotation_2(a, path1))
+    path2 = 'out_rot_1.jpg'
+    path3 = 'out_rot_2.jpg'
+    # 对已经旋转的图像再旋转180度 并截取图像，rotation不进行近似，rotation2使用近似的方法，rotation3使用近似方法,同时进行缩放
+    cv2.imwrite('out_rot_3.jpg', rotation.f_rotation_1(180, path2))
+    cv2.imwrite('out_rot_4.jpg', rotation_2.f_rotation_2(180, path2))
+    cv2.imwrite('out_rot_5.jpg', rotation_3.f_rotation_3(180, path2))
+    #对已经旋转过6度的图像进行移动，move不使用近似的方法，move2使用
+    cv2.imwrite('out_move_1.jpg', move.f_move(50,50,path3))
+    cv2.imwrite('out_move_2.jpg', move_2.f_move_2(50, 50, path3))
+    #对已经旋转过的图像进行缩放,按尺寸
+    cv2.imwrite('out_resize.jpg', resize.f_resize(path2,1000,1000))
+    # 对已经旋转过的图像进行缩放,按比例
+    cv2.imwrite('out_resize2.jpg', resize_2.f_resize(50,path3))
+    return 0
+
+if __name__ =='__main__':
+    main()
+
+
+

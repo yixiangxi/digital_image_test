@@ -1,0 +1,7 @@
+python版本号以及详细信息
+3.8.13 (default, Mar 28 2022, 06:59:08) [MSC v.1916 64 bit (AMD64)]
+sys.version_info(major=3, minor=8, micro=13, releaselevel='final', serial=0)
+
+编程idea环境为pycharm
+
+运行时请先安装OpenCV库以及numpy库

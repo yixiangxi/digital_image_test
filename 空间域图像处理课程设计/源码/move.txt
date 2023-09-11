@@ -1,0 +1,25 @@
+import time
+import cv2 as cv
+import numpy as np
+
+def f_move(x, y, path):
+    start_time = time.perf_counter()  # 记录开始时间
+    # 读取图片
+    img = cv.imread(path)
+    # 获取图片的行列数和通道数
+    rows, cols, chs = img.shape
+    # 移动后新建一个空白的图片
+    img_move = np.zeros((rows, cols, chs), dtype=np.uint8)
+    # 将原图像素点移动到目标位置
+    for i in range(rows):
+        for j in range(cols):
+            if i + y >= rows or j + x >= cols:
+                continue
+            img_move[i+y][j+x] = img[i][j]
+
+    end_time = time.perf_counter()  # 记录结束时间
+    run_time = end_time - start_time  # 计算函数运行时间
+    print(f"The function took {run_time:.6f}s to run.")
+    return img_move
+
+cv.imwrite("move.jpg",f_move(50,50,"image.jpg"))

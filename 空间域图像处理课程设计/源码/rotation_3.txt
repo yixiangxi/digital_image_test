@@ -1,0 +1,65 @@
+import cv2
+import numpy as np
+import time
+def f_rotation_3(a,path):
+    #使用近似算法
+    #读取原始图片
+    start_time = time.perf_counter()  # 记录开始时间
+    img = cv2.imread(path)
+
+    # 缩小的图像（使用 INTER_AREA 方法）
+    scale_percent = 50  # 缩小百分之五十
+    height, width = img.shape[:2]
+    width_small = int(width * scale_percent / 100)
+    height_small = int(height * scale_percent / 100)
+    dim = (width_small, height_small)
+    small_img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+
+
+    img = small_img
+    height, width = img.shape[:2]
+
+    # 计算图片中心
+    center = (width // 2, height // 2)
+
+    # 定义旋转角度（以度数为单位，逆时针方向为正方向）
+    angle = a
+
+    # 构建旋转矩阵
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+
+    # 计算旋转后的图像大小和边界框
+    rotated_width = int(height * abs(np.sin(np.radians(angle))) + width * abs(np.cos(np.radians(angle))))
+    rotated_height = int(width * abs(np.sin(np.radians(angle))) + height * abs(np.cos(np.radians(angle))))
+    x1 = int((rotated_width - width) / 2.0)
+    y1 = int((rotated_height - height) / 2.0)
+    x2 = x1 + width
+    y2 = y1 + height
+
+    # 对图像进行仿射变换，使旋转后的图像在中心位置
+    M[0, 2] += (rotated_width - width) // 2
+    M[1, 2] += (rotated_height - height) // 2
+    rotated_img = cv2.warpAffine(img, M, (rotated_width, rotated_height), flags=cv2.INTER_AREA)
+
+    image = rotated_img
+    height, width = img.shape[:2]
+    # 放大旋转后的图像
+    scale_percent = 200  # 放大百分之二百
+    width_large = int(width * scale_percent / 100)
+    height_large = int(height * scale_percent / 100)
+    dim = (width_large, height_large)
+    large_img = cv2.resize(image, dim, interpolation=cv2.INTER_LINEAR)
+
+    #在画布上居中展示图像
+    image = large_img
+    canvas = np.zeros(image.shape, dtype=np.uint8)
+    x_offset = int((width_large - image.shape[1]) / 2)
+    y_offset = int((height_large - image.shape[0]) / 2)
+    canvas[y_offset:y_offset+image.shape[0], x_offset:x_offset+image.shape[1]] = image
+
+
+
+    end_time = time.perf_counter()  # 记录结束时间
+    run_time = end_time - start_time  # 计算函数运行时间
+    print(f"The function took {run_time:.6f}s to run.")
+    return canvas
